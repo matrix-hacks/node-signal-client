@@ -6,7 +6,7 @@ It works by means of a dirty port of the [Signal Chrome App](https://github.com/
 
 ## install
 
-`npm install @keyvanfatehi/signal-client`
+`npm install signal-client`
 
 Try it out by executing `node run.js`
 
@@ -15,7 +15,7 @@ Try it out by executing `node run.js`
 The following is copied from the example `run.js`
 
 ```javascript
-const SignalClient = require('@keyvanfatehi/signal-client');
+const SignalClient = require('signal-client');
 
 const client = new SignalClient("nodejs");
 
