@@ -9,7 +9,7 @@ const fs = require('fs');
 const events = require('events');
 require('mkdirp').sync(process.cwd()+'/data');
 
-const signalDesktopRoot = path.join(__dirname, 'node_modules', 'signal-desktop');
+const signalDesktopRoot = path.resolve('node_modules', 'signal-desktop');
 const signalPath = (script) => path.join(signalDesktopRoot, script);
 const signalRequire = (script) => require(signalPath(script))
 
@@ -267,6 +267,10 @@ class SignalClient extends EventEmitter {
     if (!Whisper.Registration.isDone()) {
       return link().then(() => init());
     }
+  }
+
+  link() {
+    return startSequence(this.clientName, this).link();
   }
 
   // Remember, client's sent messages will NOT cause `message` or `sent` event!
