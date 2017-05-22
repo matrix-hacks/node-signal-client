@@ -65,3 +65,9 @@ client.on('error', (ev)=>{
 
 client.start();
 ```
+
+## storage
+
+The client stores keys and other information in two places.
+
+Two sqlite databases, and a data/ directory are created in the current working directory.
