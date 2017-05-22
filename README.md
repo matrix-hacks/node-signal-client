@@ -6,7 +6,7 @@ It works by means of a dirty port of the [Signal Chrome App](https://github.com/
 
 # Warning
 
-When you `require` this library, a bunch of things happen on the global scope! Because `domain` is deprecated, this is not safely encapsulated. If your application is also doing weird things or expecting things with `global`, you really must examine the source code.
+When you `require` this library, a bunch of things happen on the global scope! In order to port the Chrome app, this had to be done -- just be aware of this in case your application also deals with globals. If so, you'll probably want to communicate with it through IPC or something instead of `require`ing it directly.
 
 ## install
 
