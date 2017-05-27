@@ -21,7 +21,7 @@ global.window = global;
 window.navigator = {
   onLine: true,
   userAgent: 'nodejs',
-  appName: 'nodejs'
+  appName: 'nodejs',
   hardwareConcurrency: 1
 };
 
