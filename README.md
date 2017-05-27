@@ -2,7 +2,7 @@
 
 This is a client library for Signal, the secure messenger app by Open Whisper Systems.
 
-It works by means of a dirty port of the [Signal Chrome App](https://github.com/WhisperSystems/Signal-Desktop) to Node.js, which serves as the client. This is cloned during the `npm install` process. Despite being designed for Chrome, the environment is appropriately patched to allow the program to run in Node.js, unhindered.
+It works by means of a dirty port of the [Signal Chrome App](https://github.com/WhisperSystems/Signal-Desktop) to Node.js. This is cloned by `npm` during `npm install`. Despite being designed for Chrome, the environment is appropriately patched to allow the program to run in Node.js, unhindered.
 
 # Warning
 
