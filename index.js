@@ -18,6 +18,13 @@ process.on('unhandledRejection', function(reason, p){
 });
 global.window = global;
 
+window.navigator = {
+  onLine: true,
+  userAgent: 'nodejs',
+  appName: 'nodejs'
+  hardwareConcurrency: 1
+};
+
  // need this to avoid opaque origin error in indexeddb shim
 window.location = { origin: "localhost" }
 global.XMLHttpRequest = require('xhr2');
