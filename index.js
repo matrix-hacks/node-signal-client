@@ -296,6 +296,11 @@ class SignalClient extends EventEmitter {
   link() {
     return startSequence(this.clientName, this).link();
   }
+ 
+  syncGroups(){
+    return textsecure.messaging.sendRequestGroupSyncMessage()
+  }
+
   sendMessageToGroup(groupId, message, attachments = []) {
     let timeStamp = new Date().getTime();
     let expireTimer = 0;
