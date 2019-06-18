@@ -279,6 +279,10 @@ class SignalClient extends EventEmitter {
   link() {
     return startSequence(this.clientName, this).link();
   }
+  
+  markRead(read) {
+    return textsecure.messaging.syncReadMessages(read);
+  }
 
   // Remember, client's sent messages will NOT cause `message` or `sent` event!
   // however you WILL get delivery `receipt` events.
