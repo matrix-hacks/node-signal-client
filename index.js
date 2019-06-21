@@ -301,6 +301,10 @@ class SignalClient extends EventEmitter {
     return textsecure.messaging.sendRequestGroupSyncMessage();
   }
 
+  syncContacts() {
+    return textsecure.messaging.sendRequestContactSyncMessage(); 
+  }
+
   sendMessageToGroup(groupId, message, attachments = []) {
     let timeStamp = new Date().getTime();
     let expireTimer = 0;
