@@ -296,13 +296,17 @@ class SignalClient extends EventEmitter {
   link() {
     return startSequence(this.clientName, this).link();
   }
- 
+
   syncGroups() {
     return textsecure.messaging.sendRequestGroupSyncMessage();
   }
 
   syncContacts() {
     return textsecure.messaging.sendRequestContactSyncMessage(); 
+  }
+
+  markRead(read) {
+    return textsecure.messaging.syncReadMessages(read);
   }
 
   sendMessageToGroup(groupId, message, attachments = []) {
