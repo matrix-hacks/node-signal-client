@@ -297,8 +297,8 @@ class SignalClient extends EventEmitter {
     return startSequence(this.clientName, this).link();
   }
  
-  syncGroups(){
-    return textsecure.messaging.sendRequestGroupSyncMessage()
+  syncGroups() {
+    return textsecure.messaging.sendRequestGroupSyncMessage();
   }
 
   sendMessageToGroup(groupId, message, attachments = []) {
