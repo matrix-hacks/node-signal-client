@@ -23,7 +23,7 @@
     "node-persist": "^2.0.11",
     "node-webcrypto-ossl": "^1.0.23",
     "qrcode-terminal": "^0.11.0",
-    "signal-desktop": "WhisperSystems/Signal-Desktop#v0.39.0",
+    "signal-desktop": "nr23730/Signal-Desktop#a54691a",
     "underscore": "^1.8.3",
     "ws": "^3.0.0",
     "xhr2": "^0.1.4"
