@@ -248,6 +248,7 @@ const startSequence = (clientName, emitter) => {
       'group',
       'read',
       'error',
+      'typing'
     ].forEach((type) => {
       messageReceiver.addEventListener(type, (...args) => {
         emitter.emit(type, ...args);
