@@ -306,8 +306,21 @@ class SignalClient extends EventEmitter {
     return textsecure.messaging.sendRequestContactSyncMessage(); 
   }
 
-  markRead(read) {
-    return textsecure.messaging.syncReadMessages(read);
+  /**
+   * mark messages as read in your signal clients
+   * @param {Object[]} reads contains timestamps and sender of messages to mark as read 
+   */
+  syncReadMessages(reads) {
+    return textsecure.messaging.syncReadMessages(reads);
+  }
+
+  /**
+   * send read receipts for messages to your contacts
+   * @param {string} sender sender of the message(s)
+   * @param {Number[]} reads timestamps of messages
+   */
+  sendReadReceipts(sender,reads) {
+    textsecure.messaging.sendReadReceipts(sender,reads,{}); 
   }
 
   sendMessageToGroup(groupId, message, attachments = []) {
