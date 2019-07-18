@@ -323,6 +323,16 @@ class SignalClient extends EventEmitter {
     textsecure.messaging.sendReadReceipts(sender,reads,{}); 
   }
 
+    /**
+   * send typing events to your contacts
+   * @param {string} sender sender of the message(s)
+   * @param {Number[]} reads timestamps of messages
+   */
+  sendTypingMessage(phoneNumber,status) {
+    let timestamp = new Date().getTime();
+    textsecure.messaging.sendTypingMessage({ recipientId: phoneNumber, groupId: undefined, groupNumber: undefined, isTyping: status, timestamp },{}); 
+  }
+
   sendMessageToGroup(groupId, message, attachments = []) {
     let timeStamp = new Date().getTime();
     let expireTimer = 0;
