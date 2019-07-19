@@ -328,9 +328,8 @@ class SignalClient extends EventEmitter {
    * @param {string} sender sender of the message(s)
    * @param {Number[]} reads timestamps of messages
    */
-  sendTypingMessage(phoneNumber,status) {
-    let timestamp = new Date().getTime();
-    textsecure.messaging.sendTypingMessage({ recipientId: phoneNumber, groupId: undefined, groupNumber: undefined, isTyping: status, timestamp },{}); 
+  sendTypingMessage(payload) {
+    textsecure.messaging.sendTypingMessage(payload,{}); 
   }
 
   sendMessageToGroup(groupId, message, attachments = []) {
