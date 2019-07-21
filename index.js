@@ -341,7 +341,10 @@ class SignalClient extends EventEmitter {
       attachments,
       timeStamp,
       expireTimer
-    );
+    ).then(function(result) {
+      return textsecure.messaging.sendSyncMessage(
+        result.dataMessage, timeStamp, groupId, expireTimer);
+    });
   }
   // Remember, client's sent messages will NOT cause `message` or `sent` event!
   // however you WILL get delivery `receipt` events.
@@ -355,7 +358,10 @@ class SignalClient extends EventEmitter {
       attachments,
       timeStamp,
       expireTimer
-    );
+    ).then(function(result) {
+      return textsecure.messaging.sendSyncMessage(
+        result.dataMessage, timeStamp, phoneNumber, expireTimer);
+    });
   }
 }
 
