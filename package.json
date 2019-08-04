@@ -30,6 +30,6 @@
     "worker": "^0.4.0",
     "ws": "^7.1.1",
     "xhr2": "^0.2.0",
-    "signal-desktop": "http://github.com/signalapp/Signal-Desktop.git"
+    "signal-desktop": "https://github.com/signalapp/Signal-Desktop.git"
   }
 }
