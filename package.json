@@ -16,9 +16,6 @@
     "backbone-indexeddb": "^0.0.13",
     "bluebird": "^3.5.5",
     "bytebuffer": "^5.0.1",
-    "electron": "4.0.3",
-    "electron-builder": "^21.2.0",
-    "electron-rebuild": "^1.8.5",
     "indexeddbshim": "^4.1.0",
     "jquery-deferred": "^0.3.1",
     "mkdirp": "^0.5.1",
@@ -26,10 +23,10 @@
     "node-persist": "^3.0.5",
     "node-webcrypto-ossl": "^1.0.48",
     "qrcode-terminal": "^0.12.0",
+    "signal-desktop": "git+https://github.com/nr23730/Signal-Desktop.git",
     "underscore": "^1.9.1",
     "worker": "^0.4.0",
     "ws": "^7.1.1",
-    "xhr2": "^0.2.0",
-    "signal-desktop": "https://github.com/signalapp/Signal-Desktop.git"
+    "xhr2": "^0.2.0"
   }
 }
