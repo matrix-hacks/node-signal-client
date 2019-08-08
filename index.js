@@ -1,22 +1,40 @@
-// Haha... yeah this file is a bunch of nasty hacks I know...
-// The reason for this is:
-// a) i am basically dirty-porting the Chrome App to node.js
-// b) my goal is purely to get it **working**
-const qrcode = require('qrcode-terminal');
-const Promise = require('bluebird');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const _ = require('lodash');
+const qrcode = require('qrcode-terminal');
+const Promise = require('bluebird');
 const events = require('events');
-require('mkdirp').sync(process.cwd() + '/data');
 
+require('mkdirp').sync(process.cwd() + '/data');
+global.window = global;
+window.app = {};
+app.getPath = function() {
+  return process.cwd() + '/data/';
+}
 const signalDesktopRoot = path.resolve('node_modules', 'signal-desktop');
 const signalPath = (script) => path.join(signalDesktopRoot, script);
-const signalRequire = (script) => require(signalPath(script))
+const signalRequire = (script) => require(signalPath(script));
 
 process.on('unhandledRejection', function (reason, p) {
   console.log("Possibly Unhandled Rejection at: Promise ", p, " reason: ", reason);
 });
-global.window = global;
+window.emitter = new events.EventEmitter();
+
+const config = signalRequire('config/production');
+window.getTitle = () => title;
+window.getEnvironment = () => config.environment;
+window.getAppInstance = () => config.appInstance;
+window.getVersion = () => config.version;
+window.isImportMode = () => config.importMode;
+window.getExpiration = () => config.buildExpiration;
+window.getNodeVersion = () => config.node_version;
+window.getHostName = () => config.hostname;
+window.getServerTrustRoot = () => config.serverTrustRoot;
+window.isBehindProxy = () => Boolean(config.proxyUrl);
+const auth = "-----BEGIN CERTIFICATE-----\nMIID7zCCAtegAwIBAgIJAIm6LatK5PNiMA0GCSqGSIb3DQEBBQUAMIGNMQswCQYD\nVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j\naXNjbzEdMBsGA1UECgwUT3BlbiBXaGlzcGVyIFN5c3RlbXMxHTAbBgNVBAsMFE9w\nZW4gV2hpc3BlciBTeXN0ZW1zMRMwEQYDVQQDDApUZXh0U2VjdXJlMB4XDTEzMDMy\nNTIyMTgzNVoXDTIzMDMyMzIyMTgzNVowgY0xCzAJBgNVBAYTAlVTMRMwEQYDVQQI\nDApDYWxpZm9ybmlhMRYwFAYDVQQHDA1TYW4gRnJhbmNpc2NvMR0wGwYDVQQKDBRP\ncGVuIFdoaXNwZXIgU3lzdGVtczEdMBsGA1UECwwUT3BlbiBXaGlzcGVyIFN5c3Rl\nbXMxEzARBgNVBAMMClRleHRTZWN1cmUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw\nggEKAoIBAQDBSWBpOCBDF0i4q2d4jAXkSXUGpbeWugVPQCjaL6qD9QDOxeW1afvf\nPo863i6Crq1KDxHpB36EwzVcjwLkFTIMeo7t9s1FQolAt3mErV2U0vie6Ves+yj6\ngrSfxwIDAcdsKmI0a1SQCZlr3Q1tcHAkAKFRxYNawADyps5B+Zmqcgf653TXS5/0\nIPPQLocLn8GWLwOYNnYfBvILKDMItmZTtEbucdigxEA9mfIvvHADEbteLtVgwBm9\nR5vVvtwrD6CCxI3pgH7EH7kMP0Od93wLisvn1yhHY7FuYlrkYqdkMvWUrKoASVw4\njb69vaeJCUdU+HCoXOSP1PQcL6WenNCHAgMBAAGjUDBOMB0GA1UdDgQWBBQBixjx\nP/s5GURuhYa+lGUypzI8kDAfBgNVHSMEGDAWgBQBixjxP/s5GURuhYa+lGUypzI8\nkDAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBBQUAA4IBAQB+Hr4hC56m0LvJAu1R\nK6NuPDbTMEN7/jMojFHxH4P3XPFfupjR+bkDq0pPOU6JjIxnrD1XD/EVmTTaTVY5\niOheyv7UzJOefb2pLOc9qsuvI4fnaESh9bhzln+LXxtCrRPGhkxA1IMIo3J/s2WF\n/KVYZyciu6b4ubJ91XPAuBNZwImug7/srWvbpk0hq6A6z140WTVSKtJG7EP41kJe\n/oF4usY5J7LPkxK3LWzMJnb5EIJDmRvyH8pyRwWg6Qm6qiGFaI4nL8QU4La1x2en\n4DGXRaLMPRwjELNgQPodR38zoCMuA8gHZfZYYoZ7D7Q1wNUiVHcxuFrEeBaYJbLE\nrwLV\n-----END CERTIFICATE-----\n";
+
+const Attachments = signalRequire('app/attachments');
 
 window.navigator = {
   onLine: true,
@@ -25,25 +43,61 @@ window.navigator = {
   hardwareConcurrency: 1
 };
 
+function now() {
+  const date = new Date();
+  return date.toJSON();
+}
+
+function logAtLevel(level, prefix, ...args) {
+  console.log(prefix, now(), ...args);
+}
+
+window.log = {
+  fatal: _.partial(logAtLevel, 'fatal', 'FATAL'),
+  error: _.partial(logAtLevel, 'error', 'ERROR'),
+  warn: _.partial(logAtLevel, 'warn', 'WARN '),
+  info: _.partial(logAtLevel, 'info', 'INFO '),
+  debug: _.partial(logAtLevel, 'debug', 'DEBUG'),
+  trace: _.partial(logAtLevel, 'trace', 'TRACE')
+};
+
+const { initialize: initializeWebAPI } = signalRequire('js/modules/web_api');
+
+window.WebAPI = initializeWebAPI({
+  url: config.serverUrl,
+  cdnUrl: config.cdnUrl,
+  certificateAuthority: auth,
+  contentProxyUrl: "http://contentproxy.signal.org:443",
+  proxyUrl: config.proxyUrl,
+});
+
+const Signal = signalRequire('./js/modules/signal');
+window.Signal = Signal.setup({
+  Attachments,
+  userDataPath: process.cwd() + '/data/',
+  getRegionCode: () => window.storage.get('regionCode'),
+  logger: window.log,
+});
+
+window.i18n = function(locale, messages) {
+  return '';
+}
+
+window.PROTO_ROOT = signalDesktopRoot + '/protos';
 // need this to avoid opaque origin error in indexeddb shim
 window.location = {
   origin: "localhost"
 }
-global.XMLHttpRequest = require('xhr2');
-global.moment = require('moment');
-global._ = require('underscore');
-global.Backbone = require('backbone');
+window.XMLHttpRequest = require('xhr2');
+window.moment = require('moment');
+window.PQueue = require('p-queue');
+window._ = require('underscore');
+window.Backbone = require('backbone');
 const jQuery = require('jquery-deferred');
-global.$ = jQuery;
-global.Backbone.$ = jQuery;
-global.Event = function (type) {
+window.$ = jQuery;
+window.Backbone.$ = jQuery;
+window.Event = function (type) {
   this.type = type;
-}
-window.setUnreadCount = function (count) {
-  console.log('unread count:', count);
-}
-window.clearAttention = function () {
-  // called when unreadcount is set to 0
 }
 
 window.FileReader = function () {
@@ -56,61 +110,14 @@ window.FileReader = function () {
 const setGlobalIndexedDbShimVars = require('indexeddbshim');
 setGlobalIndexedDbShimVars(); // 
 
-global.btoa = function (str) {
+window.btoa = function (str) {
   return new Buffer(str).toString('base64');
 };
 
-global.Whisper = {};
+window.Whisper = {};
 Whisper.events = _.clone(Backbone.Events);
-//global.Backbone.sync =  //require('backbone-indexeddb').sync;
 
-global.Backbone.sync = signalRequire('components/indexeddb-backbonejs-adapter/backbone-indexeddb').sync;
-
-window.globalListeners = {}
-
-//var nodeWindowEventEmitter = new events.EventEmitter();
-window.addEventListener = Whisper.events.on; //nodeWindowEventEmitter.addListener;
-signalRequire('js/database');
-var WebCryptoOSSL = require("node-webcrypto-ossl");
-global.crypto = new WebCryptoOSSL();
-
-global.WebSocket = require('ws');
-
-global.dcodeIO = {}
-dcodeIO.Long = signalRequire('components/long/dist/Long');
-dcodeIO.ProtoBuf = signalRequire('components/protobuf/dist/ProtoBuf');
-
-dcodeIO.ProtoBuf.Util.fetch = (path, callback) => {
-  fs.readFile(signalPath(path), (err, data) => {
-    if (err)
-      callback(null);
-    else
-      callback("" + data);
-  });
-}
-
-dcodeIO.ByteBuffer = require('bytebuffer');
-
-//require('./signaljs/components');
-signalRequire('js/signal_protocol_store');
-signalRequire('js/libtextsecure');
-
-function toArrayBuffer(buf) {
-  var ab = new ArrayBuffer(buf.length);
-  var view = new Uint8Array(ab);
-  for (var i = 0; i < buf.length; ++i) {
-    view[i] = buf[i];
-  }
-  return ab;
-}
-
-var Model = Backbone.Model.extend({
-  database: Whisper.Database
-});
-var Item = Model.extend({
-  storeName: 'items'
-});
-window.textsecure.storage.impl = {
+window.keyStore = {
   put: function (key, value) {
     fs.writeFileSync(process.cwd() + '/data/' + key, textsecure.utils.jsonThing(value));
     let item = new Item({
@@ -120,24 +127,12 @@ window.textsecure.storage.impl = {
     item.save();
   },
   get: function (key, defaultValue) {
-
-    let ret;
     try {
       let raw = fs.readFileSync(process.cwd() + '/data/' + key);
       if (typeof raw === "undefined") {
         return defaultValue;
       } else {
-        let val = JSON.parse(raw);
-        if (key === "signaling_key") {
-          return Buffer.from(val, 'ascii');
-        } else if (key === "identityKey") {
-          return {
-            privKey: toArrayBuffer(Buffer.from(val.privKey, 'ascii')),
-            pubKey: toArrayBuffer(Buffer.from(val.pubKey, 'ascii'))
-          }
-        } else {
-          return val;
-        }
+        return val = JSON.parse(raw);
       }
     } catch (e) {
       return defaultValue;
@@ -152,60 +147,98 @@ window.textsecure.storage.impl = {
   }
 }
 
-global.storage = window.textsecure.storage.impl;
+window.Backbone.sync = signalRequire('components/indexeddb-backbonejs-adapter/backbone-indexeddb').sync;
+
+window.globalListeners = {}
+window.getGuid = require('uuid/v4');
+
+window.addEventListener = Whisper.events.on;
+
+const WebCrypto = require("node-webcrypto-ossl");
+window.crypto = new WebCrypto();
+
+window.dcodeIO = {}
+dcodeIO.Long = signalRequire('components/long/dist/Long');
+dcodeIO.ProtoBuf = signalRequire('components/protobuf/dist/ProtoBuf');
+
+dcodeIO.ProtoBuf.Util.fetch = (path, callback) => {
+  fs.readFile(path, (err, data) => {
+    if (err)
+      callback(null);
+    else
+      callback("" + data);
+  });
+}
+
+dcodeIO.ByteBuffer = require('bytebuffer');
+signalRequire('js/reliable_trigger');
+signalRequire('js/database');
+signalRequire('js/storage');
 Whisper.events.trigger('storage_ready');
 
+signalRequire('js/signal_protocol_store');
+signalRequire('js/libtextsecure');
+
+window.libphonenumber = require('google-libphonenumber').PhoneNumberUtil.getInstance();
+window.libphonenumber.PhoneNumberFormat = require('google-libphonenumber').PhoneNumberFormat;
+signalRequire('js/libphonenumber-util');
 signalRequire('js/models/messages');
-signalRequire('js/registration');
-signalRequire('js/rotate_signed_prekey_listener');
+signalRequire('js/models/conversations');
+signalRequire('js/models/blockedNumbers');
 signalRequire('js/expiring_messages');
 
-global.libphonenumber = signalRequire('components/libphonenumber-api/libphonenumber_api-compiled');
-signalRequire('js/libphonenumber-util');
-
-signalRequire('js/models/conversations');
+signalRequire('js/chromium');
+signalRequire('js/registration');
+signalRequire('js/expire');
 signalRequire('js/conversation_controller');
+signalRequire('js/message_controller');
 
+signalRequire('js/wall_clock_listener');
+signalRequire('js/rotate_signed_prekey_listener');
+signalRequire('js/keychange_listener');
 
-var SERVER_URL = 'https://textsecure-service-ca.whispersystems.org';
-var SERVER_PORTS = [80, 4433, 8443];
-var messageReceiver;
+let Model = Backbone.Model.extend({
+  database: Whisper.Database
+});
+let Item = Model.extend({
+  storeName: 'items'
+});
 
-global.getSocketStatus = function () {
-  if (messageReceiver) {
-    return messageReceiver.getStatus();
-  } else {
+  Whisper.KeyChangeListener.init(textsecure.storage.protocol);
+  textsecure.storage.protocol.on('removePreKey', () => {
+    getAccountManager().refreshPreKeys();
+  });
+
+  let messageReceiver;
+  window.getSocketStatus = () => {
+    if (messageReceiver) {
+      return messageReceiver.getStatus();
+    }
     return -1;
-  }
-};
+  };
+  Whisper.events = _.clone(Backbone.Events);
+  let accountManager;
+  window.getAccountManager = () => {
+    if (!accountManager) {
+      const USERNAME = storage.get('number_id');
+      const PASSWORD = storage.get('password');
+      accountManager = new textsecure.AccountManager(USERNAME, PASSWORD);
+      accountManager.addEventListener('registration', () => {
+        const user = {
+          regionCode: window.storage.get('regionCode'),
+          ourNumber: textsecure.storage.user.getNumber(),
+        };
+        Whisper.events.trigger('userChanged', user);
 
+        Whisper.Registration.markDone();
+        window.log.info('dispatching registration event');
+        Whisper.events.trigger('registration_done');
+      });
+    }
+    return accountManager;
+  };
 
-var accountManager;
-global.getAccountManager = function () {
-  if (!accountManager) {
-    var USERNAME = storage.get('number_id');
-    var PASSWORD = storage.get('password');
-    accountManager = new textsecure.AccountManager(
-      SERVER_URL, SERVER_PORTS, USERNAME, PASSWORD
-    );
-    console.log('ad ev reg');
-    accountManager.addEventListener('registration', function () {
-      console.log('reg event!!!!');
-      if (!Whisper.Registration.everDone()) {
-        storage.put('safety-numbers-approval', false);
-      }
-      Whisper.Registration.markDone();
-      console.log("dispatching registration event");
-      Whisper.events.trigger('registration_done');
-    });
-  }
-  return accountManager;
-};
-
-Whisper.RotateSignedPreKeyListener.init(Whisper.events);
-Whisper.ExpiringMessagesListener.init(Whisper.events);
-
-global.getSyncRequest = function () {
+window.getSyncRequest = function () {
   return new textsecure.SyncRequest(textsecure.messaging, messageReceiver);
 };
 
@@ -216,27 +249,184 @@ Whisper.events.on('reconnectTimer', function () {
   console.log('reconnect timer!');
 });
 
-const startSequence = (clientName, emitter) => {
+let connectCount = 0;
+let initialLoadComplete = false;
 
-  const link = () => {
-    return getAccountManager().registerSecondDevice(
-      (url) => qrcode.generate(url),
-      () => Promise.resolve(clientName)
+async function getStorageReady() {
+  let key = keyStore.get('key');
+  if (!key) {
+    console.log(
+      'key/initialize: Generating new encryption key, since we did not find it on disk'
     );
+    // https://www.zetetic.net/sqlcipher/sqlcipher-api/#key
+    key = crypto.randomBytes(32).toString('hex');
+    keyStore.put('key', key);
   }
 
-  const init = () => {
+  window.sql = signalRequire('app/sql');
+  window.sqlChannels = signalRequire('app/sql_channel');
+  const success = await sql.initialize({
+    configDir:  process.cwd() + '/data/',
+    key,
+    messages: {},
+  });
+  if (!success) {
+    console.log('sql.initialize was unsuccessful; returning early');
+    return;
+  }
+  await sqlChannels.initialize();
+
+  try {
+    await Promise.all([
+      ConversationController.load(),
+      textsecure.storage.protocol.hydrateCaches(),
+    ]);
+    await storage.fetch();
+  } catch (error) {
+    window.log.error(
+      'background.js: ConversationController failed to load:',
+      error && error.stack ? error.stack : error
+    );
+  } finally {
+    console.log('triggering storage ready');
+    Whisper.events.trigger('storage_ready');
+  }
+}
+
+  // Descriptors
+  window.getGroupDescriptor = group => ({
+    type: window.Signal.Types.Message.GROUP,
+    id: group.id,
+  });
+
+  // Matches event data from `libtextsecure` `MessageReceiver::handleDataMessage`:
+  window.getDescriptorForReceived = ({ message, source }) =>
+    message.group
+      ? getGroupDescriptor(message.group)
+      : { type: window.Signal.Types.Message.PRIVATE, id: source };
+
+  // Received:
+  window.handleMessageReceivedProfileUpdate = async function({
+    data,
+    confirm,
+    messageDescriptor,
+  }) {
+    const profileKey = data.message.profileKey.toString('base64');
+    const sender = await ConversationController.getOrCreateAndWait(
+      messageDescriptor.id,
+      'private'
+    );
+
+    // Will do the save for us
+    await sender.setProfileKey(profileKey);
+
+    return confirm();
+  }
+
+  window.getExistingMessage = async function(message) {
+    try {
+      const { attributes } = message;
+      const result = await window.Signal.Data.getMessageBySender(attributes, {
+        Message: Whisper.Message,
+      });
+
+      if (result) {
+        return MessageController.register(result.id, result);
+      }
+
+      return null;
+    } catch (error) {
+      window.log.error('getExistingMessage error:', error);
+      return false;
+    }
+  }
+
+  window.isMessageDuplicate = async function(message) {
+    const result = await getExistingMessage(message);
+    return Boolean(result);
+  }
+
+  window.initIncomingMessage = async function(data, options = {}) {
+    const { isError } = options;
+
+    const message = new Whisper.Message({
+      source: data.source,
+      sourceDevice: data.sourceDevice,
+      sent_at: data.timestamp,
+      received_at: data.receivedAt || Date.now(),
+      conversationId: data.source,
+      unidentifiedDeliveryReceived: data.unidentifiedDeliveryReceived,
+      type: 'incoming',
+      unread: 1,
+    });
+
+    // If we don't return early here, we can get into infinite error loops. So, no
+    //   delivery receipts for sealed sender errors.
+    if (isError || !data.unidentifiedDeliveryReceived) {
+      return message;
+    }
+
+    try {
+      const { wrap, sendOptions } = ConversationController.prepareForSend(
+        data.source
+      );
+      await wrap(
+        textsecure.messaging.sendDeliveryReceipt(
+          data.source,
+          data.timestamp,
+          sendOptions
+        )
+      );
+    } catch (error) {
+      window.log.error(
+        `Failed to send delivery receipt to ${data.source} for message ${
+          data.timestamp
+        }:`,
+        error && error.stack ? error.stack : error
+      );
+    }
+
+    return message;
+  }
+
+Whisper.events.on('storage_ready', () => {
+  
+  if(this.link) {
+    return getAccountManager().registerSecondDevice(
+      (url) => qrcode.generate(url),
+      () => Promise.resolve(this.clientName)
+    );
+  } else {
     if (messageReceiver) {
       messageReceiver.close();
     }
 
-    var USERNAME = storage.get('number_id');
-    var PASSWORD = storage.get('password');
-    var mySignalingKey = new Buffer(storage.get('signaling_key'));
+    const udSupportKey = 'hasRegisterSupportForUnauthenticatedDelivery';
+    if (!storage.get(udSupportKey)) {
+      const server = WebAPI.connect({ username: storage.get('number_id'), password: storage.get('password') });
+      try {
+        server.registerSupportForUnauthenticatedDelivery();
+        storage.put(udSupportKey, true);
+      } catch (error) {
+        window.log.error(
+          'Error: Unable to register for unauthenticated delivery support.',
+          error && error.stack ? error.stack : error
+        );
+      }
+    }
+
+    connectCount += 1;
+    const options = {
+      retryCached: connectCount === 1,
+      serverTrustRoot: window.getServerTrustRoot(),
+    };
+
+    const USERNAME = storage.get('number_id');
+    const PASSWORD = storage.get('password');
 
     // initialize the socket and start listening for messages
     messageReceiver = new textsecure.MessageReceiver(
-      SERVER_URL, SERVER_PORTS, USERNAME, PASSWORD, mySignalingKey
+      USERNAME, PASSWORD, undefined, options
     );
 
     // Proxy all the events to the client emitter
@@ -251,16 +441,107 @@ const startSequence = (clientName, emitter) => {
       'typing'
     ].forEach((type) => {
       messageReceiver.addEventListener(type, (...args) => {
-        emitter.emit(type, ...args);
+        this.matrixEmitter.emit(type, ...args);
       });
     });
 
+    this.matrixEmitter.on('message', (event) => {
+      const { data, confirm } = event;
 
-    global.textsecure.messaging = new textsecure.MessageSender(
-      SERVER_URL, SERVER_PORTS, USERNAME, PASSWORD
+      const messageDescriptor = getDescriptorForReceived(data);
+
+      const { PROFILE_KEY_UPDATE } = textsecure.protobuf.DataMessage.Flags;
+      // eslint-disable-next-line no-bitwise
+      const isProfileUpdate = Boolean(data.message.flags & PROFILE_KEY_UPDATE);
+      if (isProfileUpdate) {
+        return handleMessageReceivedProfileUpdate({
+          data,
+          confirm,
+          messageDescriptor,
+        });
+      }
+  
+      const message = initIncomingMessage(data).then(message => {
+        const isDuplicate = isMessageDuplicate(message);
+        if (isDuplicate) {
+          window.log.warn('Received duplicate message', message);
+          return event.confirm();
+        }
+      });
+  
+      const ourNumber = textsecure.storage.user.getNumber();
+      const isGroupUpdate =
+        data.message.group &&
+        data.message.group.type !== textsecure.protobuf.GroupContext.Type.DELIVER;
+      const conversation = ConversationController.get(messageDescriptor.id);
+  
+      // We drop messages for groups we already know about, which we're not a part of,
+      //   except for group updates
+      if (
+        conversation &&
+        !conversation.isPrivate() &&
+        !conversation.hasMember(ourNumber) &&
+        !isGroupUpdate
+      ) {
+        window.log.warn(
+          `Received message destined for group ${conversation.idForLogging()}, which we're not a part of. Dropping.`
+        );
+        return event.confirm();
+      }
+  
+      ConversationController.getOrCreateAndWait(
+        messageDescriptor.id,
+        messageDescriptor.type
+      );
+      return;
+    });
+
+    window.textsecure.messaging = new textsecure.MessageSender(
+      USERNAME, PASSWORD
+    ); 
+    Whisper.RotateSignedPreKeyListener.init(Whisper.events);
+    window.Signal.RefreshSenderCertificate.initialize({
+      events: Whisper.events,
+      storage,
+      navigator,
+      logger: window.log,
+    });
+    Whisper.ExpiringMessagesListener.init(Whisper.events);
+
+    const syncRequest = new textsecure.SyncRequest(
+      textsecure.messaging,
+      messageReceiver
     );
+    Whisper.events.trigger('contactsync:begin');
+    syncRequest.addEventListener('success', () => {
+      window.log.info('sync successful');
+      storage.put('synced_at', Date.now());
+      Whisper.events.trigger('contactsync');
+    });
+    syncRequest.addEventListener('timeout', () => {
+      window.log.error('sync timed out');
+      Whisper.events.trigger('contactsync');
+    });
 
-    return Promise.resolve(emitter);
+    return Promise.resolve(this.matrixEmitter);
+  }
+
+});
+
+const startSequence = (clientName, matrixEmitter) => {
+
+  this.clientName = clientName;
+  this.link = false;
+  this.matrixEmitter = matrixEmitter;
+  getStorageReady();
+
+  const link = () => {
+    this.link = true;
+    return null;
+  }
+
+  const init = () => {
+    return null;
   }
 
   return {
@@ -281,17 +562,7 @@ class SignalClient extends EventEmitter {
     if (messageReceiver)
       return Promise.resolve(this);
 
-    const {
-      link,
-      init
-    } = startSequence(this.clientName, this);
-
-    if (Whisper.Registration.everDone()) {
-      return init();
-    }
-    if (!Whisper.Registration.isDone()) {
-      return link().then(() => init());
-    }
+    return startSequence(this.clientName, this).init();
   }
 
   link() {
@@ -320,7 +591,10 @@ class SignalClient extends EventEmitter {
    * @param {Number[]} reads timestamps of messages
    */
   sendReadReceipts(sender,reads) {
-    textsecure.messaging.sendReadReceipts(sender,reads,{}); 
+    if(sender == null) {
+      return;
+    }
+    textsecure.messaging.sendReadReceipts(sender, reads, {}); 
   }
 
     /**
@@ -332,23 +606,27 @@ class SignalClient extends EventEmitter {
     textsecure.messaging.sendTypingMessage(payload,{}); 
   }
 
-  sendMessageToGroup(groupId, message, attachments = []) {
+  sendMessageToGroup(groupId, message, members, attachments = []) {
     let timeStamp = new Date().getTime();
     let expireTimer = 0;
     return textsecure.messaging.sendMessageToGroup(
       groupId,
+      members,
       message,
       attachments,
+      null,
+      [],
+      undefined,
       timeStamp,
-      expireTimer
+      expireTimer,
+      undefined,
+      {}
     ).then(function(result) {
       return textsecure.messaging.sendSyncMessage(
         result.dataMessage, timeStamp, groupId, expireTimer);
     });
   }
-  // Remember, client's sent messages will NOT cause `message` or `sent` event!
-  // however you WILL get delivery `receipt` events.
-  // returns a promise
+
   sendMessage(phoneNumber, message, attachments = []) {
     let timeStamp = new Date().getTime();
     let expireTimer = 0;
@@ -356,8 +634,13 @@ class SignalClient extends EventEmitter {
       phoneNumber,
       message,
       attachments,
+      null,
+      [],
+      undefined,
       timeStamp,
-      expireTimer
+      expireTimer,
+      undefined,
+      {}
     ).then(function(result) {
       return textsecure.messaging.sendSyncMessage(
         result.dataMessage, timeStamp, phoneNumber, expireTimer);
