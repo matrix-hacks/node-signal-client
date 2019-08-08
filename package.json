@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node run.js"
+    "start": "node run.js",
+    "postinstall": "cd node_modules/signal-desktop && yarn && yarn grunt"
   },
   "homepage": "https://github.com/nr23730/node-signal-client",
   "repository": {
@@ -16,6 +17,7 @@
     "backbone-indexeddb": "^0.0.13",
     "bluebird": "^3.5.5",
     "bytebuffer": "^5.0.1",
+    "electron-builder": "20.39.0",
     "indexeddbshim": "^4.1.0",
     "jquery-deferred": "^0.3.1",
     "mkdirp": "^0.5.1",
