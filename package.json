@@ -23,7 +23,7 @@
     "node-persist": "^3.0.5",
     "node-webcrypto-ossl": "nr23730/node-webcrypto-ossl#aes_ctr256",
     "qrcode-terminal": "^0.12.0",
-    "signal-desktop": "git+https://github.com/nr23730/Signal-Desktop.git",
+    "signal-desktop": "nr23730/signal-desktop#development",
     "underscore": "^1.9.1",
     "worker": "^0.4.0",
     "ws": "^7.1.1",
