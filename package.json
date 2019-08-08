@@ -4,8 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node run.js",
-    "postinstall": "cd ./node_modules/signal-desktop && yarn && yarn grunt"
+    "start": "node run.js"
   },
   "homepage": "https://github.com/nr23730/node-signal-client",
   "repository": {
