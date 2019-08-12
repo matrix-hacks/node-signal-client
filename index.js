@@ -531,16 +531,6 @@ Whisper.events.on('storage_ready', () => {
       textsecure.messaging,
       messageReceiver
     );
-    Whisper.events.trigger('contactsync:begin');
-    syncRequest.addEventListener('success', () => {
-      window.log.info('sync successful');
-      storage.put('synced_at', Date.now());
-      Whisper.events.trigger('contactsync');
-    });
-    syncRequest.addEventListener('timeout', () => {
-      window.log.error('sync timed out');
-      Whisper.events.trigger('contactsync');
-    });
 
     return Promise.resolve(this.matrixEmitter);
   }
