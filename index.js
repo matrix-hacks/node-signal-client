@@ -308,6 +308,59 @@ async function getStorageReady() {
   }
 }
 
+async function onMessageReceived(event) {
+  const { data, confirm } = event;
+
+  const messageDescriptor = getDescriptorForReceived(data);
+
+  const { PROFILE_KEY_UPDATE } = textsecure.protobuf.DataMessage.Flags;
+  // eslint-disable-next-line no-bitwise
+  const isProfileUpdate = Boolean(data.message.flags & PROFILE_KEY_UPDATE);
+  if (isProfileUpdate) {
+    return handleMessageReceivedProfileUpdate({
+      data,
+      confirm,
+      messageDescriptor,
+    });
+  }
+
+  const message = await initIncomingMessage(data);
+  const isDuplicate = await isMessageDuplicate(message);
+  if (isDuplicate) {
+    window.log.warn('Received duplicate message', message.idForLogging());
+    return event.confirm();
+  }
+
+  const ourNumber = textsecure.storage.user.getNumber();
+  const isGroupUpdate =
+    data.message.group &&
+    data.message.group.type !== textsecure.protobuf.GroupContext.Type.DELIVER;
+  const conversation = ConversationController.get(messageDescriptor.id);
+
+  // We drop messages for groups we already know about, which we're not a part of,
+  //   except for group updates
+  if (
+    conversation &&
+    !conversation.isPrivate() &&
+    !conversation.hasMember(ourNumber) &&
+    !isGroupUpdate
+  ) {
+    window.log.warn(
+      `Received message destined for group ${conversation.idForLogging()}, which we're not a part of. Dropping.`
+    );
+    return event.confirm();
+  }
+
+  await ConversationController.getOrCreateAndWait(
+    messageDescriptor.id,
+    messageDescriptor.type
+  );
+
+  return message.handleDataMessage(data.message, event.confirm, {
+    initialLoadComplete,
+  });
+}
+
   // Descriptors
   window.getGroupDescriptor = group => ({
     type: window.Signal.Types.Message.GROUP,
@@ -460,56 +513,7 @@ Whisper.events.on('storage_ready', () => {
       });
     });
 
-    this.matrixEmitter.on('message', (event) => {
-      const { data, confirm } = event;
-
-      const messageDescriptor = getDescriptorForReceived(data);
-
-      const { PROFILE_KEY_UPDATE } = textsecure.protobuf.DataMessage.Flags;
-      // eslint-disable-next-line no-bitwise
-      const isProfileUpdate = Boolean(data.message.flags & PROFILE_KEY_UPDATE);
-      if (isProfileUpdate) {
-        return handleMessageReceivedProfileUpdate({
-          data,
-          confirm,
-          messageDescriptor,
-        });
-      }
-  
-      const message = initIncomingMessage(data).then(message => {
-        const isDuplicate = isMessageDuplicate(message);
-        if (isDuplicate) {
-          window.log.warn('Received duplicate message', message);
-          return event.confirm();
-        }
-      });
-  
-      const ourNumber = textsecure.storage.user.getNumber();
-      const isGroupUpdate =
-        data.message.group &&
-        data.message.group.type !== textsecure.protobuf.GroupContext.Type.DELIVER;
-      const conversation = ConversationController.get(messageDescriptor.id);
-  
-      // We drop messages for groups we already know about, which we're not a part of,
-      //   except for group updates
-      if (
-        conversation &&
-        !conversation.isPrivate() &&
-        !conversation.hasMember(ourNumber) &&
-        !isGroupUpdate
-      ) {
-        window.log.warn(
-          `Received message destined for group ${conversation.idForLogging()}, which we're not a part of. Dropping.`
-        );
-        return event.confirm();
-      }
-  
-      ConversationController.getOrCreateAndWait(
-        messageDescriptor.id,
-        messageDescriptor.type
-      );
-      return;
-    });
+    this.matrixEmitter.on('message', onMessageReceived);
 
     window.textsecure.messaging = new textsecure.MessageSender(
       USERNAME, PASSWORD
