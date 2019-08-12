@@ -253,10 +253,6 @@ let Item = Model.extend({
     return accountManager;
   };
 
-window.getSyncRequest = function () {
-  return new textsecure.SyncRequest(textsecure.messaging, messageReceiver);
-};
-
 Whisper.events.on('unauthorized', function () {
   console.log('unauthorized!');
 });
