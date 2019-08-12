@@ -592,6 +592,10 @@ class SignalClient extends EventEmitter {
     return textsecure.messaging.sendRequestContactSyncMessage(); 
   }
 
+  async downloadAttachment(attachment) {
+    return messageReceiver.downloadAttachment(attachment);
+  }
+
   /**
    * mark messages as read in your signal clients
    * @param {Object[]} reads contains timestamps and sender of messages to mark as read 
