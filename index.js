@@ -304,6 +304,239 @@ async function getStorageReady() {
   }
 }
 
+function onConfiguration(ev) {
+  const { configuration } = ev;
+  const {
+    readReceipts,
+    typingIndicators,
+    unidentifiedDeliveryIndicators,
+    linkPreviews,
+  } = configuration;
+
+  storage.put('read-receipt-setting', readReceipts);
+
+  if (
+    unidentifiedDeliveryIndicators === true ||
+    unidentifiedDeliveryIndicators === false
+  ) {
+    storage.put(
+      'unidentifiedDeliveryIndicators',
+      unidentifiedDeliveryIndicators
+    );
+  }
+
+  if (typingIndicators === true || typingIndicators === false) {
+    storage.put('typingIndicators', typingIndicators);
+  }
+
+  if (linkPreviews === true || linkPreviews === false) {
+    storage.put('linkPreviews', linkPreviews);
+  }
+
+  ev.confirm();
+}
+
+function onTyping(ev) {
+  const { typing, sender, senderDevice } = ev;
+  const { groupId, started } = typing || {};
+
+  // We don't do anything with incoming typing messages if the setting is disabled
+  if (!storage.get('typingIndicators')) {
+    return;
+  }
+
+  const conversation = ConversationController.get(groupId || sender);
+  const ourNumber = textsecure.storage.user.getNumber();
+
+  if (conversation) {
+    // We drop typing notifications in groups we're not a part of
+    if (!conversation.isPrivate() && !conversation.hasMember(ourNumber)) {
+      window.log.warn(
+        `Received typing indicator for group ${conversation.idForLogging()}, which we're not a part of. Dropping.`
+      );
+      return;
+    }
+
+  }
+}
+
+async function onContactReceived(ev) {
+  const details = ev.contactDetails;
+
+  const id = details.number;
+
+  if (id === textsecure.storage.user.getNumber()) {
+    // special case for syncing details about ourselves
+    if (details.profileKey) {
+      window.log.info('Got sync message with our own profile key');
+      storage.put('profileKey', details.profileKey);
+    }
+  }
+
+  const c = new Whisper.Conversation({
+    id,
+  });
+  const validationError = c.validateNumber();
+  if (validationError) {
+    window.log.error(
+      'Invalid contact received:',
+      Errors.toLogFormat(validationError)
+    );
+    return;
+  }
+
+  try {
+    const conversation = await ConversationController.getOrCreateAndWait(
+      id,
+      'private'
+    );
+    let activeAt = conversation.get('active_at');
+
+    // The idea is to make any new contact show up in the left pane. If
+    //   activeAt is null, then this contact has been purposefully hidden.
+    if (activeAt !== null) {
+      activeAt = activeAt || Date.now();
+    }
+
+    if (details.profileKey) {
+      const profileKey = window.Signal.Crypto.arrayBufferToBase64(
+        details.profileKey
+      );
+      conversation.setProfileKey(profileKey);
+    } else {
+      conversation.dropProfileKey();
+    }
+
+    if (typeof details.blocked !== 'undefined') {
+      if (details.blocked) {
+        storage.addBlockedNumber(id);
+      } else {
+        storage.removeBlockedNumber(id);
+      }
+    }
+
+    conversation.set({
+      name: details.name,
+      color: details.color,
+      active_at: activeAt,
+    });
+
+    // Update the conversation avatar only if new avatar exists and hash differs
+    const { avatar } = details;
+    if (avatar && avatar.data) {
+      const newAttributes = await window.Signal.Types.Conversation.maybeUpdateAvatar(
+        conversation.attributes,
+        avatar.data,
+        {
+          writeNewAttachmentData,
+          deleteAttachmentData,
+        }
+      );
+      conversation.set(newAttributes);
+    }
+
+    await window.Signal.Data.updateConversation(id, conversation.attributes, {
+      Conversation: Whisper.Conversation,
+    });
+    const { expireTimer } = details;
+    const isValidExpireTimer = typeof expireTimer === 'number';
+    if (isValidExpireTimer) {
+      const source = textsecure.storage.user.getNumber();
+      const receivedAt = Date.now();
+
+      await conversation.updateExpirationTimer(
+        expireTimer,
+        source,
+        receivedAt,
+        { fromSync: true }
+      );
+    }
+
+    if (details.verified) {
+      const { verified } = details;
+      const verifiedEvent = new Event('verified');
+      verifiedEvent.verified = {
+        state: verified.state,
+        destination: verified.destination,
+        identityKey: verified.identityKey.toArrayBuffer(),
+      };
+      verifiedEvent.viaContactSync = true;
+      //await onVerified(verifiedEvent);
+    }
+  } catch (error) {
+    window.log.error('onContactReceived error:', Errors.toLogFormat(error));
+  }
+}
+
+async function onGroupReceived(ev) {
+  const details = ev.groupDetails;
+  const { id } = details;
+
+  const conversation = await ConversationController.getOrCreateAndWait(
+    id,
+    'group'
+  );
+
+  const updates = {
+    name: details.name,
+    members: details.members,
+    color: details.color,
+    type: 'group',
+  };
+
+  if (details.active) {
+    const activeAt = conversation.get('active_at');
+
+    // The idea is to make any new group show up in the left pane. If
+    //   activeAt is null, then this group has been purposefully hidden.
+    if (activeAt !== null) {
+      updates.active_at = activeAt || Date.now();
+    }
+    updates.left = false;
+  } else {
+    updates.left = true;
+  }
+
+  if (details.blocked) {
+    storage.addBlockedGroup(id);
+  } else {
+    storage.removeBlockedGroup(id);
+  }
+
+  conversation.set(updates);
+
+  // Update the conversation avatar only if new avatar exists and hash differs
+  const { avatar } = details;
+  if (avatar && avatar.data) {
+    const newAttributes = await window.Signal.Types.Conversation.maybeUpdateAvatar(
+      conversation.attributes,
+      avatar.data,
+      {
+        writeNewAttachmentData,
+        deleteAttachmentData,
+      }
+    );
+    conversation.set(newAttributes);
+  }
+
+  await window.Signal.Data.updateConversation(id, conversation.attributes, {
+    Conversation: Whisper.Conversation,
+  });
+  const { expireTimer } = details;
+  const isValidExpireTimer = typeof expireTimer === 'number';
+  if (!isValidExpireTimer) {
+    return;
+  }
+
+  const source = textsecure.storage.user.getNumber();
+  const receivedAt = Date.now();
+  await conversation.updateExpirationTimer(expireTimer, source, receivedAt, {
+    fromSync: true,
+  });
+
+  ev.confirm();
+}
+
 async function onMessageReceived(event) {
   const { data, confirm } = event;
 
@@ -357,6 +590,101 @@ async function onMessageReceived(event) {
   });
 }
 
+async function onSentMessage(event) {
+  const { data, confirm } = event;
+
+  const messageDescriptor = getDescriptorForSent(data);
+
+  const { PROFILE_KEY_UPDATE } = textsecure.protobuf.DataMessage.Flags;
+  // eslint-disable-next-line no-bitwise
+  const isProfileUpdate = Boolean(data.message.flags & PROFILE_KEY_UPDATE);
+  if (isProfileUpdate) {
+    await handleMessageSentProfileUpdate({
+      data,
+      confirm,
+      messageDescriptor,
+    });
+    return;
+  }
+
+  const message = await createSentMessage(data);
+  const existing = await getExistingMessage(message);
+  const isUpdate = Boolean(data.isRecipientUpdate);
+
+  if (isUpdate && existing) {
+    event.confirm();
+
+    let sentTo = [];
+    let unidentifiedDeliveries = [];
+    if (Array.isArray(data.unidentifiedStatus)) {
+      sentTo = data.unidentifiedStatus.map(item => item.destination);
+
+      const unidentified = _.filter(data.unidentifiedStatus, item =>
+        Boolean(item.unidentified)
+      );
+      unidentifiedDeliveries = unidentified.map(item => item.destination);
+    }
+
+    existing.set({
+      sent_to: _.union(existing.get('sent_to'), sentTo),
+      unidentifiedDeliveries: _.union(
+        existing.get('unidentifiedDeliveries'),
+        unidentifiedDeliveries
+      ),
+    });
+    await window.Signal.Data.saveMessage(existing.attributes, {
+      Message: Whisper.Message,
+    });
+  } else if (isUpdate) {
+    window.log.warn(
+      `onSentMessage: Received update transcript, but no existing entry for message ${message.idForLogging()}. Dropping.`
+    );
+    event.confirm();
+  } else if (existing) {
+    window.log.warn(
+      `onSentMessage: Received duplicate transcript for message ${message.idForLogging()}, but it was not an update transcript. Dropping.`
+    );
+    event.confirm();
+  } else {
+    await ConversationController.getOrCreateAndWait(
+      messageDescriptor.id,
+      messageDescriptor.type
+    );
+    await message.handleDataMessage(data.message, event.confirm, {
+      initialLoadComplete,
+    });
+  }
+}
+
+// Sent:
+async function handleMessageSentProfileUpdate({
+  data,
+  confirm,
+  messageDescriptor,
+}) {
+  // First set profileSharing = true for the conversation we sent to
+  const { id, type } = messageDescriptor;
+  const conversation = await ConversationController.getOrCreateAndWait(
+    id,
+    type
+  );
+
+  conversation.set({ profileSharing: true });
+  await window.Signal.Data.updateConversation(id, conversation.attributes, {
+    Conversation: Whisper.Conversation,
+  });
+
+  // Then we update our own profileKey if it's different from what we have
+  const ourNumber = textsecure.storage.user.getNumber();
+  const profileKey = data.message.profileKey.toString('base64');
+  const me = await ConversationController.getOrCreate(ourNumber, 'private');
+
+  // Will do the save for us if needed
+  await me.setProfileKey(profileKey);
+
+  return confirm();
+}
+
   // Descriptors
   window.getGroupDescriptor = group => ({
     type: window.Signal.Types.Message.GROUP,
@@ -400,7 +728,7 @@ async function onMessageReceived(event) {
 
       return null;
     } catch (error) {
-      window.log.error('getExistingMessage error:', error);
+      window.log.error('getExistingMessage error:', Errors.toLogFormat(error));
       return false;
     }
   }
@@ -510,6 +838,11 @@ Whisper.events.on('storage_ready', () => {
     });
 
     this.matrixEmitter.on('message', onMessageReceived);
+    this.matrixEmitter.on('contact', onContactReceived);
+    this.matrixEmitter.on('group', onGroupReceived);
+    this.matrixEmitter.on('sent', onSentMessage);
+    this.matrixEmitter.on('configuration', onConfiguration);
+    this.matrixEmitter.on('typing', onTyping);
 
     window.textsecure.messaging = new textsecure.MessageSender(
       USERNAME, PASSWORD
@@ -523,10 +856,7 @@ Whisper.events.on('storage_ready', () => {
     });
     Whisper.ExpiringMessagesListener.init(Whisper.events);
 
-    const syncRequest = new textsecure.SyncRequest(
-      textsecure.messaging,
-      messageReceiver
-    );
+    window.document = {};
 
     return Promise.resolve(this.matrixEmitter);
   }
