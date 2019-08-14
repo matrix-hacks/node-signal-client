@@ -961,9 +961,10 @@ class SignalClient extends EventEmitter {
       undefined,
       {}
     ).then(function(result) {
-      return textsecure.messaging.sendSyncMessage(
+      textsecure.messaging.sendSyncMessage(
         result.dataMessage, timeStamp, groupId, expireTimer);
-    });
+      return {timestamp: timeStamp, numbers: result.successfulNumbers};
+      });
   }
 
   sendMessage(phoneNumber, message, attachments = []) {
@@ -981,8 +982,9 @@ class SignalClient extends EventEmitter {
       undefined,
       {}
     ).then(function(result) {
-      return textsecure.messaging.sendSyncMessage(
+      textsecure.messaging.sendSyncMessage(
         result.dataMessage, timeStamp, phoneNumber, expireTimer);
+      return {timestamp: timeStamp, numbers: result.successfulNumbers};
     });
   }
 }
