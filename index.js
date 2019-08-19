@@ -947,7 +947,9 @@ class SignalClient extends EventEmitter {
 
   async sendMessageToGroup(groupId, message, members, attachments = []) {
     let timeStamp = await new Date().getTime();
-    let expireTimer = 0;
+    let conversation = await ConversationController.getOrCreateAndWait(groupId, 'group');
+    let timer = await conversation.get('expireTimer');
+    let expireTimer = timer ? timer : 0;
     await textsecure.messaging.sendMessageToGroup(
       groupId,
       members,
@@ -967,7 +969,9 @@ class SignalClient extends EventEmitter {
 
   async sendMessage(phoneNumber, message, attachments = []) {
     let timeStamp = await new Date().getTime();
-    let expireTimer = 0;
+    let conversation = await ConversationController.getOrCreateAndWait(phoneNumber, 'private');
+    let timer = await conversation.get('expireTimer');
+    let expireTimer = timer ? timer : 0;
     let result = await textsecure.messaging.sendMessageToNumber(
       phoneNumber,
       message,
