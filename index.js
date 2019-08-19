@@ -125,6 +125,9 @@ window.btoa = function (str) {
 };
 
 window.Whisper = {};
+Whisper.Notifications = {};
+Whisper.Notifications.remove = () => undefined;
+Whisper.Notifications.where = () => undefined;
 Whisper.events = _.clone(Backbone.Events);
 
 window.keyStore = {
