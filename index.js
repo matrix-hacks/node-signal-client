@@ -953,7 +953,7 @@ class SignalClient extends EventEmitter {
     let conversation = await ConversationController.getOrCreateAndWait(groupId, 'group');
     let timer = await conversation.get('expireTimer');
     let expireTimer = timer ? timer : 0;
-    await textsecure.messaging.sendMessageToGroup(
+    let result = await textsecure.messaging.sendMessageToGroup(
       groupId,
       members,
       message,
