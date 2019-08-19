@@ -945,10 +945,10 @@ class SignalClient extends EventEmitter {
     textsecure.messaging.sendTypingMessage(payload,{}); 
   }
 
-  sendMessageToGroup(groupId, message, members, attachments = []) {
-    let timeStamp = new Date().getTime();
+  async sendMessageToGroup(groupId, message, members, attachments = []) {
+    let timeStamp = await new Date().getTime();
     let expireTimer = 0;
-    return textsecure.messaging.sendMessageToGroup(
+    await textsecure.messaging.sendMessageToGroup(
       groupId,
       members,
       message,
@@ -960,17 +960,15 @@ class SignalClient extends EventEmitter {
       expireTimer,
       undefined,
       {}
-    ).then(function(result) {
-      textsecure.messaging.sendSyncMessage(
-        result.dataMessage, timeStamp, groupId, expireTimer);
-      return {timestamp: timeStamp, numbers: result.successfulNumbers};
-      });
+    );
+    await textsecure.messaging.sendSyncMessage(result.dataMessage, timeStamp, groupId, expireTimer);
+    return {timestamp: timeStamp, numbers: result.successfulNumbers};
   }
 
-  sendMessage(phoneNumber, message, attachments = []) {
-    let timeStamp = new Date().getTime();
+  async sendMessage(phoneNumber, message, attachments = []) {
+    let timeStamp = await new Date().getTime();
     let expireTimer = 0;
-    return textsecure.messaging.sendMessageToNumber(
+    let result = await textsecure.messaging.sendMessageToNumber(
       phoneNumber,
       message,
       attachments,
@@ -981,11 +979,9 @@ class SignalClient extends EventEmitter {
       expireTimer,
       undefined,
       {}
-    ).then(function(result) {
-      textsecure.messaging.sendSyncMessage(
-        result.dataMessage, timeStamp, phoneNumber, expireTimer);
-      return {timestamp: timeStamp, numbers: result.successfulNumbers};
-    });
+    );
+    await textsecure.messaging.sendSyncMessage(result.dataMessage, timeStamp, phoneNumber, expireTimer);
+    return {timestamp: timeStamp, numbers: result.successfulNumbers};
   }
 }
 
