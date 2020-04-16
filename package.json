@@ -6,10 +6,10 @@
   "scripts": {
     "start": "node run.js"
   },
-  "homepage": "https://github.com/nr23730/node-signal-client",
+  "homepage": "https://github.com/witchent/node-signal-client",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nr23730/node-signal-client.git"
+    "url": "https://github.com/witchent/node-signal-client.git"
   },
   "dependencies": {
     "backbone": "^1.4.0",
@@ -24,7 +24,7 @@
     "node-persist": "^3.0.5",
     "node-webcrypto-ossl": "nr23730/node-webcrypto-ossl#73ee251",
     "qrcode-terminal": "^0.12.0",
-    "signal-desktop": "nr23730/signal-desktop#master",
+    "signal-desktop": "witchent/signal-desktop#master",
     "underscore": "^1.9.1",
     "worker": "^0.4.0",
     "ws": "^7.1.1",
