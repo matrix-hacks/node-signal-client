@@ -16,7 +16,7 @@
     "backbone-indexeddb": "^0.0.13",
     "bluebird": "^3.7.2",
     "bytebuffer": "^5.0.1",
-    "electron-builder": "20.39.0",
+    "electron-builder": "22.5.1",
     "indexeddbshim": "^6.1.0",
     "jquery-deferred": "^0.3.1",
     "mkdirp": "^1.0.4",
