@@ -6,28 +6,29 @@
   "scripts": {
     "start": "node run.js"
   },
-  "homepage": "https://github.com/nr23730/node-signal-client",
+  "homepage": "https://github.com/matrix-hacks/node-signal-client",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nr23730/node-signal-client.git"
+    "url": "https://github.com/matrix-hacks/node-signal-client.git"
   },
   "dependencies": {
     "backbone": "^1.4.0",
     "backbone-indexeddb": "^0.0.13",
-    "bluebird": "^3.5.5",
+    "bluebird": "^3.7.2",
     "bytebuffer": "^5.0.1",
-    "electron-builder": "20.39.0",
-    "indexeddbshim": "^4.1.0",
+    "electron-builder": "22.5.1",
+    "indexeddbshim": "^6.1.0",
     "jquery-deferred": "^0.3.1",
-    "mkdirp": "^0.5.1",
+    "mkdirp": "^1.0.4",
     "moment": "^2.24.0",
     "node-persist": "^3.0.5",
-    "node-webcrypto-ossl": "nr23730/node-webcrypto-ossl#73ee251",
+    "node-webcrypto-ossl": "^2.0.1",
     "qrcode-terminal": "^0.12.0",
-    "signal-desktop": "nr23730/signal-desktop#master",
-    "underscore": "^1.9.1",
+    "signal-desktop": "matrix-hacks/signal-desktop#master",
+    "underscore": "^1.10.2",
     "worker": "^0.4.0",
-    "ws": "^7.1.1",
+    "ws": "^7.2.3",
     "xhr2": "^0.2.0"
   }
 }
+
