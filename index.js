@@ -81,6 +81,7 @@ window.WebAPI = initializeWebAPI({
   certificateAuthority: auth,
   contentProxyUrl: "http://contentproxy.signal.org:443",
   proxyUrl: config.proxyUrl,
+  version: "Dummy",
 });
 
 const Signal = signalRequire('./js/modules/signal');
@@ -176,8 +177,8 @@ window.getGuid = require('uuid/v4');
 
 window.addEventListener = Whisper.events.on;
 
-const { Crypto } = require("node-webcrypto-ossl");
-window.crypto = new Crypto();
+const WebCrypto = require("node-webcrypto-ossl");
+window.crypto = new WebCrypto();
 
 window.dcodeIO = {}
 dcodeIO.Long = signalRequire('components/long/dist/Long');
@@ -215,8 +216,8 @@ signalRequire('js/expiring_messages');
 signalRequire('js/expiring_tap_to_view_messages');
 
 signalRequire('js/chromium');
-signalRequire('js/registration');
-signalRequire('js/expire');
+signalRequire('ts/util/registration');
+//  signalRequire('js/expire');
 signalRequire('js/conversation_controller');
 signalRequire('js/message_controller');
 
@@ -257,7 +258,7 @@ let Item = Model.extend({
         };
         Whisper.events.trigger('userChanged', user);
 
-        Whisper.Registration.markDone();
+        window.Signal.Util.Registration.markDone();
         window.log.info('dispatching registration event');
         Whisper.events.trigger('registration_done');
       });
