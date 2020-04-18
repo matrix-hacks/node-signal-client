@@ -20,7 +20,7 @@
     "indexeddbshim": "^6.1.0",
     "jquery-deferred": "^0.3.1",
     "mkdirp": "^1.0.4",
-    "moment": "^2.24.0",
+    "moment": "^2.19.3",
     "node-persist": "^3.0.5",
     "node-webcrypto-ossl": "nr23730/node-webcrypto-ossl#aes_ctr256",
     "qrcode-terminal": "^0.12.0",
