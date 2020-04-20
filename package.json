@@ -27,7 +27,7 @@
     "signal-desktop": "matrix-hacks/Signal-Desktop#526554f",
     "underscore": "^1.10.2",
     "worker": "^0.4.0",
-    "ws": "^7.2.3",
+    "ws": "^3.3.1",
     "xhr2": "^0.2.0"
   }
 }
