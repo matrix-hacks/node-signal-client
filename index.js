@@ -225,6 +225,25 @@ signalRequire('js/wall_clock_listener');
 signalRequire('js/rotate_signed_prekey_listener');
 signalRequire('js/keychange_listener');
 
+
+// Copied from signal-desktops preload.js
+window.normalizeUuids = (obj, paths, context) => {
+  if (!obj) {
+    return;
+  }
+  paths.forEach(path => {
+    const val = _.get(obj, path);
+    if (val) {
+      if (!window.isValidGuid(val)) {
+        window.log.warn(
+          `Normalizing invalid uuid: ${val} at path ${path} in context "${context}"`
+        );
+      }
+      _.set(obj, path, val.toLowerCase());
+    }
+  });
+};
+
 let Model = Backbone.Model.extend({
   database: Whisper.Database
 });
@@ -708,6 +727,13 @@ async function handleMessageSentProfileUpdate({
     id: group.id,
   });
 
+
+  // Matches event data from `libtextsecure` `MessageReceiver::handleSentMessage`:
+  window.getDescriptorForSent = ({ message, destination }) =>
+    message.group
+      ? getGroupDescriptor(message.group)
+      : { type: window.Signal.Types.Message.PRIVATE, id: destination };
+
   // Matches event data from `libtextsecure` `MessageReceiver::handleDataMessage`:
   window.getDescriptorForReceived = ({ message, source }) =>
     message.group
@@ -836,7 +862,7 @@ Whisper.events.on('storage_ready', () => {
 
     // initialize the socket and start listening for messages
     messageReceiver = new textsecure.MessageReceiver(
-      USERNAME, PASSWORD, undefined, options
+      USERNAME, undefined, PASSWORD, undefined, options
     );
 
     // Proxy all the events to the client emitter
